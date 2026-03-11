@@ -1,34 +1,38 @@
-use std::env;
+use lox::lex::Lexer;
 use std::fs;
+use std::path::PathBuf;
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
+use clap::{Parser, Subcommand};
 
-    if args.len() < 3 {
-        eprintln!("Usage: {} tokenize <filename>", args[0]);
-        return;
-    }
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[command(subcommand)]
+    command: Commands,
+}
 
-    let command = &args[1];
-    let filename = &args[2];
+#[derive(Subcommand, Debug)]
+enum Commands {
+    Tokenize { filename: PathBuf },
+}
 
-    match command.as_str() {
-        "tokenize" => {
-            eprintln!("logs from your program will appear here!");
+fn main() -> std::io::Result<()> {
+    let args = Args::parse();
 
-            let contents = fs::read_to_string(filename).unwrap_or_else(|_| {
-                eprintln!("failed to read file {}!", filename);
-                String::new()
-            });
+    match args.command {
+        Commands::Tokenize { filename } => {
+            let contents = fs::read_to_string(filename)?;
 
             if !contents.is_empty() {
-                panic!("scanner not implemented!");
+                let lexer = Lexer::new(&contents);
+                for token in lexer {
+                    println!("{:?}", token);
+                }
             } else {
                 eprintln!("EOF null");
             }
         }
-        _ => {
-            eprintln!("Unknown command {}!", command);
-        }
     }
+
+    Ok(())
 }
