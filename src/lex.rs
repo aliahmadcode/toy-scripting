@@ -1,4 +1,6 @@
-#[derive(PartialEq, Eq, Debug)]
+use std::fmt;
+
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TokenType {
     Var,
     If,
@@ -24,7 +26,9 @@ pub enum TokenType {
     Minus,
     Star,
     Slash,
-    Mod,
+
+    Ternary,
+    Colon,
 
     Equal,
     Greater,
@@ -45,14 +49,21 @@ pub enum TokenType {
     Dot,
 }
 
+impl fmt::Display for TokenType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct Token {
     pub kind: TokenType,
     pub lexeme: String,
 }
 
+#[derive(Debug)]
 pub struct Lexer<'a> {
-    src: std::iter::Peekable<std::str::Chars<'a>>,
+    pub src: std::iter::Peekable<std::str::Chars<'a>>,
 }
 
 impl<'a> Lexer<'a> {
@@ -164,17 +175,18 @@ impl<'a> Iterator for Lexer<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(c) = self.src.next() {
             return match c {
-                '(' => self.single(TokenType::LeftParen, '('),
-                ')' => self.single(TokenType::RightParen, ')'),
-                '{' => self.single(TokenType::LeftBrace, '{'),
-                '}' => self.single(TokenType::RightBrace, '}'),
-                ';' => self.single(TokenType::Semicolon, ';'),
-                ',' => self.single(TokenType::Comma, ','),
-                '+' => self.single(TokenType::Plus, '+'),
-                '-' => self.single(TokenType::Minus, '-'),
-                '*' => self.single(TokenType::Star, '*'),
-                '%' => self.single(TokenType::Mod, '%'),
-                '.' => self.single(TokenType::Dot, '.'),
+                '(' => self.single(TokenType::LeftParen, c),
+                ')' => self.single(TokenType::RightParen, c),
+                '{' => self.single(TokenType::LeftBrace, c),
+                '}' => self.single(TokenType::RightBrace, c),
+                ';' => self.single(TokenType::Semicolon, c),
+                ',' => self.single(TokenType::Comma, c),
+                '+' => self.single(TokenType::Plus, c),
+                '-' => self.single(TokenType::Minus, c),
+                '*' => self.single(TokenType::Star, c),
+                '.' => self.single(TokenType::Dot, c),
+                '?' => self.single(TokenType::Ternary, c),
+                ':' => self.single(TokenType::Colon, c),
 
                 '/' => match self.ignore_if_comments(c) {
                     Some(t) => Some(t),
@@ -216,14 +228,23 @@ mod tests {
     }
 
     #[test]
-    fn scanning_string() {
+    fn scanning_strings() {
         let code = "\"\"
-            \"string\"";
+            \"string\"
+
+            var a = \"hello world\"; // a is \"hello world\"
+            ";
 
         let mut lexer = Lexer::new(code);
 
         assert_eq!(Some(Token { kind: TokenType::String, lexeme: "".to_string() }), lexer.next());
         assert_eq!(Some(Token { kind: TokenType::String, lexeme: "string".to_string() }), lexer.next());
+
+        assert_eq!(Some(Token { kind: TokenType::Var, lexeme: "var".to_string() }), lexer.next());
+        assert_eq!(Some(Token { kind: TokenType::Ident, lexeme: "a".to_string() }), lexer.next());
+        assert_eq!(Some(Token { kind: TokenType::Equal, lexeme: "=".to_string() }), lexer.next());
+        assert_eq!(Some(Token { kind: TokenType::String, lexeme: "hello world".to_string() }), lexer.next());
+        assert_eq!(Some(Token { kind: TokenType::Semicolon, lexeme: ";".to_string() }), lexer.next());
     }
 
     #[test]
@@ -296,7 +317,7 @@ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_";
     }
 
     #[test]
-    fn scanning_eq() {
+    fn scanning_multi_operator() {
         let code = "(){};,+-*!===<=>=!=<>/.";
         let mut lexer = Lexer::new(code);
 
@@ -318,5 +339,17 @@ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_";
         assert_eq!(Some(Token { kind: TokenType::Greater, lexeme: ">".to_string() }), lexer.next());
         assert_eq!(Some(Token { kind: TokenType::Slash, lexeme: "/".to_string() }), lexer.next());
         assert_eq!(Some(Token { kind: TokenType::Dot, lexeme: ".".to_string() }), lexer.next());
+    }
+
+    #[test]
+    fn scanning_expressions() {
+        let code = "1.0 + 2.0 * 3.0";
+        let mut lexer = Lexer::new(code);
+
+        assert_eq!(Some(Token { kind: TokenType::Number, lexeme: "1.0".to_string() }), lexer.next());
+        assert_eq!(Some(Token { kind: TokenType::Plus, lexeme: "+".to_string() }), lexer.next());
+        assert_eq!(Some(Token { kind: TokenType::Number, lexeme: "2.0".to_string() }), lexer.next());
+        assert_eq!(Some(Token { kind: TokenType::Star, lexeme: "*".to_string() }), lexer.next());
+        assert_eq!(Some(Token { kind: TokenType::Number, lexeme: "3.0".to_string() }), lexer.next());
     }
 }
