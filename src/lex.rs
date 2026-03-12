@@ -7,15 +7,12 @@ pub enum TokenType {
     Else,
     While,
     And,
-    Class,
     False,
     True,
     Fn,
     Nil,
-    Super,
     Return,
     Or,
-    This,
     For,
 
     Ident,
@@ -137,15 +134,12 @@ impl<'a> Lexer<'a> {
             "while" => TokenType::While,
             "for" => TokenType::For,
             "and" => TokenType::And,
-            "class" => TokenType::Class,
             "false" => TokenType::False,
             "true" => TokenType::True,
             "fn" => TokenType::Fn,
             "nil" => TokenType::Nil,
-            "super" => TokenType::Super,
             "return" => TokenType::Return,
             "or" => TokenType::Or,
-            "this" => TokenType::This,
             _ => TokenType::Ident,
         };
 
@@ -296,11 +290,10 @@ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_";
 
     #[test]
     fn scanning_keywords() {
-        let code = "and class else false for fn if nil or return super this true var while";
+        let code = "and else false for fn if nil or return true var while";
         let mut lexer = Lexer::new(code);
 
         assert_eq!(Some(Token { kind: TokenType::And, lexeme: "and".to_string() }), lexer.next());
-        assert_eq!(Some(Token { kind: TokenType::Class, lexeme: "class".to_string() }), lexer.next());
         assert_eq!(Some(Token { kind: TokenType::Else, lexeme: "else".to_string() }), lexer.next());
         assert_eq!(Some(Token { kind: TokenType::False, lexeme: "false".to_string() }), lexer.next());
         assert_eq!(Some(Token { kind: TokenType::For, lexeme: "for".to_string() }), lexer.next());
@@ -309,8 +302,6 @@ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_";
         assert_eq!(Some(Token { kind: TokenType::Nil, lexeme: "nil".to_string() }), lexer.next());
         assert_eq!(Some(Token { kind: TokenType::Or, lexeme: "or".to_string() }), lexer.next());
         assert_eq!(Some(Token { kind: TokenType::Return, lexeme: "return".to_string() }), lexer.next());
-        assert_eq!(Some(Token { kind: TokenType::Super, lexeme: "super".to_string() }), lexer.next());
-        assert_eq!(Some(Token { kind: TokenType::This, lexeme: "this".to_string() }), lexer.next());
         assert_eq!(Some(Token { kind: TokenType::True, lexeme: "true".to_string() }), lexer.next());
         assert_eq!(Some(Token { kind: TokenType::Var, lexeme: "var".to_string() }), lexer.next());
         assert_eq!(Some(Token { kind: TokenType::While, lexeme: "while".to_string() }), lexer.next());
