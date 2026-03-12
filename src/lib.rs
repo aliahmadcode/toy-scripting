@@ -28,6 +28,7 @@ impl fmt::Display for Expr {
     }
 }
 
+// https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
 pub fn expr(input: &str) -> Expr {
     let mut lexer = Lexer::new(input).peekable();
     expr_bp(&mut lexer, 0)
